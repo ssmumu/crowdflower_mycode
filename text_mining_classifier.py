@@ -8,6 +8,7 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import SGDClassifier
+from sklearn.model_selection import validation_curve
 
 
 
@@ -34,33 +35,36 @@ def buildModel(clf, modelName, X_train, X_test, y_train, y_test):
 	predicted_test = clf.predict(X_test.ravel())
 	print "Test Accuracy:\t",(np.mean(predicted_test == y_test.ravel()))*100, "%"
 
-def drawLearningGraph():
-	train_sizes, train_scores, test_scores = learning_curve(estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes)
-	plt.figure()
-    plt.title(title)
-    if ylim is not None:
-        plt.ylim(*ylim)
-    plt.xlabel("Training examples")
-    plt.ylabel("Score")
+# def drawLearningGraph(title):
+# 	train_sizes, train_scores, test_scores = learning_curve(estimator, X, y, cv=cv, n_jobs=n_jobs, train_sizes=train_sizes)
+# 	plt.figure()
+#     plt.title(title)
+#     if ylim is not None:
+#         plt.ylim(*ylim)
+#     plt.xlabel("Training examples")
+#     plt.ylabel("Score")
 
-    train_scores_mean = np.mean(train_scores, axis=1)
-    train_scores_std = np.std(train_scores, axis=1)
-    test_scores_mean = np.mean(test_scores, axis=1)
-    test_scores_std = np.std(test_scores, axis=1)
-    plt.grid()
+#     train_scores_mean = np.mean(train_scores, axis=1)
+#     train_scores_std = np.std(train_scores, axis=1)
+#     test_scores_mean = np.mean(test_scores, axis=1)
+#     test_scores_std = np.std(test_scores, axis=1)
+#     plt.grid()
 
-    plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
-                     train_scores_mean + train_scores_std, alpha=0.1,
-                     color="r")
-    plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
-                     test_scores_mean + test_scores_std, alpha=0.1, color="g")
-    plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
-             label="Training score")
-    plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
-             label="Cross-validation score")
+#     plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+#                      train_scores_mean + train_scores_std, alpha=0.1,
+#                      color="r")
+#     plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+#                      test_scores_mean + test_scores_std, alpha=0.1, color="g")
+#     plt.plot(train_sizes, train_scores_mean, 'o-', color="r",
+#              label="Training score")
+#     plt.plot(train_sizes, test_scores_mean, 'o-', color="g",
+#              label="Cross-validation score")
 
-    plt.legend(loc="best")
-    plt.show()
+#     plt.legend(loc="best")
+#     plt.show()
+
+def drawvalidationCurve():
+	train_scores, valid_scores = validation_curve(Ridge(), X, y, "alpha", np.logspace(-7, 3, 3))
     
 def getPrediction(filename, feature_cols, class_col):
 	print "\n-----  Prediction on ", filename, "  ",feature_cols, " -----" 
@@ -68,12 +72,11 @@ def getPrediction(filename, feature_cols, class_col):
 	X_train, X_test, y_train, y_test = splitTestTrain(df, X, y)
 	text_clf = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), ('clf', MultinomialNB()),])
 	buildModel(text_clf, "Multinomial Naive Bayes", X_train, X_test, y_train, y_test)
-	text_clf_svm = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()),('clf-svm', SGDClassifier(loss='hinge', penalty='l2',alpha=1e-3, n_iter=5, random_state=42)),])
+	text_clf_svm = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()),('clf-svm', SGDClassifier(max_iter=10, loss='hinge', penalty='l2',alpha=0.01, random_state=42)),])
 	buildModel(text_clf_svm, "SVM", X_train, X_test, y_train, y_test)
 
 getPrediction("text_sentiment.csv", "content", "sentiment")
+getPrediction("text_emotion2.csv", "content", "sentiment")
+
 getPrediction("text_sentiment.csv", "content_modified", "sentiment")
-
-
-# getPrediction("text_emotion_all.csv", "content", "sentiment")
-# getPrediction("text_emotion.csv", "content_modified", "sentiment")
+getPrediction("text_emotion2.csv", "content_modified", "sentiment")
